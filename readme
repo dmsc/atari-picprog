@@ -1,0 +1,22 @@
+
+
+
+Atari PIC Programmer
+--------------------
+
+Utilities:
+
+READHEX input.HEX output.COM
+ Reads the input HEX file and writes
+ an executable capable of programming
+ the PIC.
+
+PICREAD
+ Reads and displays the memory of the
+ PIC, exits with RESET.
+
+SETVPP
+ Toggles the VPP output so you can
+ measure the current voltage.
+ Exit with START.
+
