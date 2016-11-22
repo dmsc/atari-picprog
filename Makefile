@@ -33,8 +33,8 @@ FILES=\
     bin/sample.hex \
 
 # BW-DOS files to copy inside the ATR
+DOSDIR=bin/dos/
 DOS=\
-    bin/dos/\
     bin/dos/xbw130.dos\
     bin/dos/copy.com\
 
@@ -43,7 +43,7 @@ all: $(ATR)
 
 # Build an ATR disk image using "mkatr".
 picprog.atr: $(DOS) $(FILES)
-	mkatr $@ -b $^
+	mkatr $@ $(DOSDIR) -b $^
 
 # Rule to remove all build files
 clean:
