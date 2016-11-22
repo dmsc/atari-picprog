@@ -42,9 +42,9 @@ struct pics_data
     { "1: PIC16F690",  0x1400, 0x1000, 0x2000, 0x2008 },
     { "2: PIC12F675",  0x0FC0, 0x0400, 0x2000, 0x2008 },
     { "3: PIC16F1847", 0x1480, 0x2000, 0x8000, 0x8009 },
-    { "4: PIC16F1936", 0x2360, 0x2000, 0x8000, 0x8009 },
-    { 0, 0, 0, 0, 0 }
+    { "4: PIC16F1936", 0x2360, 0x2000, 0x8000, 0x8009 }
 };
+#define pic_list_size ((uint8_t)(sizeof(pic_list)/sizeof(pic_list[0])))
 
 struct pics_data pic;
 
@@ -383,21 +383,17 @@ static uint8_t write_output(void)
 void select_pic()
 {
     static char buf[8];
-    static uint8_t n, i;
+    static uint8_t i;
     do
     {
-        n = 0;
         puts("Select the PIC to program:");
-        while( pic_list[n].name )
-        {
-            puts(pic_list[n].name);
-            n++;
-        }
+        for(i=0; i<pic_list_size; i++)
+            puts(pic_list[i].name);
         puts("Number?");
         gets(buf);
         i = buf[0] - '1';
     }
-    while( i >= n );
+    while( i >= pic_list_size );
     memcpy(&pic, &pic_list[i], sizeof(pic_list[0]));
 }
 
