@@ -392,6 +392,8 @@ void select_pic()
         puts("Number?");
         gets(buf);
         i = buf[0] - '1';
+        if(buf[1])
+            i = i * 10 + buf[1] - ('1'-10);
     }
     while( i >= pic_list_size );
     memcpy(&pic, &pic_list[i], sizeof(pic_list[0]));
