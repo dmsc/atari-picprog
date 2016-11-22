@@ -1,6 +1,7 @@
 /*
  *  Atari PIC programmer
  *  Copyright (C) 2016 Daniel Serpell
+ *  List of PIC updated by MSP.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,7 +21,7 @@
  * readhex.c: parse an .hex file with a PIC firmware and generates
  *            a program capable of programming the PIC.
  *
- * Compile with ' cl65 -tatari -Osir readhex.c -o readhex.com
+ * Compile with 'cl65 -tatari -Osir readhex.c -o readhex.com'
  *
  * NOTE: this program is "simplified" to be able to compile with CC65.
  */
@@ -39,10 +40,17 @@ struct pics_data
     unsigned last_addr;
 } pic_list[] =
 {
-    { "1: PIC16F690",  0x1400, 0x1000, 0x2000, 0x2008 },
-    { "2: PIC12F675",  0x0FC0, 0x0400, 0x2000, 0x2008 },
-    { "3: PIC16F1847", 0x1480, 0x2000, 0x8000, 0x8009 },
-    { "4: PIC16F1936", 0x2360, 0x2000, 0x8000, 0x8009 }
+    { " 1: PIC12F675",  0x0FC0, 0x0400, 0x2000, 0x2008 },
+    { " 2: PIC12F1571", 0x3051 & 0xFFE0, 0x0400, 0x8000, 0x8009 }, // TODO: Update once picprog.asm is fixed
+    { " 3: PIC12F1572", 0x3050 & 0xFFE0, 0x0800, 0x8000, 0x8009 },
+    { " 4: PIC16F88",   0x0760, 0x1000, 0x2000, 0x2008 },
+    { " 5: PIC16F636",  0x10a0, 0x0800, 0x2000, 0x2008 },
+    { " 6: PIC16F690",  0x1400, 0x1000, 0x2000, 0x2008 },
+    { " 7: PIC16F1454", 0x3024, 0x2000, 0x8000, 0x8009 },
+    { " 8: PIC16F1455", 0x3025, 0x2000, 0x8000, 0x8009 },
+    { " 9: PIC16F1459", 0x3027, 0x2000, 0x8000, 0x8009 },
+    { "10: PIC16F1847", 0x1480, 0x2000, 0x8000, 0x8009 },
+    { "11: PIC16F1936", 0x2360, 0x2000, 0x8000, 0x8009 }
 };
 #define pic_list_size ((uint8_t)(sizeof(pic_list)/sizeof(pic_list[0])))
 
