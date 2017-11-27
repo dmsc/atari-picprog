@@ -77,6 +77,9 @@ pressStartMsg:  .by     $9B, "Press START to program PIC,", $9B
         ; --------------------------------------------------------------
         ;  Error reading device ID
         ;
+devIdErrorM1:   .by     "ERROR invalid device ID.", $9b, "Detected $", 0
+devIdErrorM2:   .by     ", expected $", 0
+
 deviceIdError:
         ; Ends programming and shows error
         jsr stopProgramming
@@ -95,10 +98,6 @@ deviceIdError:
         jsr showHex16
 
         jmp exitWithAddr
-
-devIdErrorM1:   .by     "ERROR invalid device ID.", $9b, "Detected $", 0
-devIdErrorM2:   .by     ", expected $", 0
-
 
         ; --------------------------------------------------------------
         ;  Main program - programs the PIC!!
@@ -131,10 +130,11 @@ programPIC:
 
         ; Verify
         lda ioword
-        and #$E0
+        and PS_deviceMask
         cmp PS_deviceID
         bne deviceIdError
         lda ioword+1
+        and PS_deviceMask+1
         cmp PS_deviceID+1
         bne deviceIdError
 
@@ -691,6 +691,8 @@ delayLoop:
 programScript:
 
 PS_deviceId:
+        .ds     2
+PS_deviceMask:
         .ds     2
 PS_scriptEnd:
         .ds     2

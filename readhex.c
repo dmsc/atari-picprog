@@ -35,22 +35,23 @@ struct pics_data
 {
     const char *name;
     unsigned device_id;
+    unsigned device_mask;  // Mask with valid bits in the device ID
     unsigned max_addr;
     unsigned id_addr;
     unsigned last_addr;
 } pic_list[] =
 {
-    { " 1: PIC12F675",  0x0FC0, 0x0400, 0x2000, 0x2008 },
-    { " 2: PIC12F1571", 0x3051 & 0xFFE0, 0x0400, 0x8000, 0x8009 }, // TODO: Update once picprog.asm is fixed
-    { " 3: PIC12F1572", 0x3050 & 0xFFE0, 0x0800, 0x8000, 0x8009 },
-    { " 4: PIC16F88",   0x0760, 0x1000, 0x2000, 0x2008 },
-    { " 5: PIC16F636",  0x10a0, 0x0800, 0x2000, 0x2008 },
-    { " 6: PIC16F690",  0x1400, 0x1000, 0x2000, 0x2008 },
-    { " 7: PIC16F1454", 0x3024, 0x2000, 0x8000, 0x8009 },
-    { " 8: PIC16F1455", 0x3025, 0x2000, 0x8000, 0x8009 },
-    { " 9: PIC16F1459", 0x3027, 0x2000, 0x8000, 0x8009 },
-    { "10: PIC16F1847", 0x1480, 0x2000, 0x8000, 0x8009 },
-    { "11: PIC16F1936", 0x2360, 0x2000, 0x8000, 0x8009 }
+    { " 1: PIC12F675",  0x0FC0, 0xFFE0, 0x0400, 0x2000, 0x2008 },
+    { " 2: PIC12F1571", 0x3051, 0xFFFF, 0x0400, 0x8000, 0x8009 },
+    { " 3: PIC12F1572", 0x3050, 0xFFFF, 0x0800, 0x8000, 0x8009 },
+    { " 4: PIC16F88",   0x0760, 0xFFE0, 0x1000, 0x2000, 0x2008 },
+    { " 5: PIC16F636",  0x10a0, 0xFFE0, 0x0800, 0x2000, 0x2008 },
+    { " 6: PIC16F690",  0x1400, 0xFFE0, 0x1000, 0x2000, 0x2008 },
+    { " 7: PIC16F1454", 0x3024, 0xFFE0, 0x2000, 0x8000, 0x8009 },
+    { " 8: PIC16F1455", 0x3025, 0xFFE0, 0x2000, 0x8000, 0x8009 },
+    { " 9: PIC16F1459", 0x3027, 0xFFE0, 0x2000, 0x8000, 0x8009 },
+    { "10: PIC16F1847", 0x1480, 0xFFE0, 0x2000, 0x8000, 0x8009 },
+    { "11: PIC16F1936", 0x2360, 0xFFE0, 0x2000, 0x8000, 0x8009 }
 };
 #define pic_list_size ((uint8_t)(sizeof(pic_list)/sizeof(pic_list[0])))
 
@@ -76,6 +77,7 @@ static FILE *hex_file;
 // Output script bufffer
 static uint8_t script_buffer[30000];
 static uint8_t *output_ptr;
+#define SCRIPT_END_PTR 4        // Position in the script that holds the script end pointer
 
 /* Writes one character to the script buffer */
 #define output_write(a) *(output_ptr++) = (a)
@@ -286,7 +288,10 @@ static uint8_t parse_hex(void)
     // writes device id
     output_write(pic.device_id & 0xFF);
     output_write(pic.device_id >> 8);
-    // writes script end
+    // writes device mask
+    output_write(pic.device_mask & 0xFF);
+    output_write(pic.device_mask >> 8);
+    // writes script end - this must be written at SCRIPT_END_PTR
     output_write(0);
     output_write(0);
     // process input file
@@ -365,8 +370,8 @@ static uint8_t write_output(void)
     // Patched the script_end:
     {
         pos = 0x2C00 + output_ptr - script_buffer;
-        script_buffer[2] = pos & 0xFF;
-        script_buffer[3] = pos >> 8;
+        script_buffer[SCRIPT_END_PTR  ] = pos & 0xFF;
+        script_buffer[SCRIPT_END_PTR+1] = pos >> 8;
     }
 
     // - new segment header: start = $2C00
