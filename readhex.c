@@ -66,10 +66,10 @@ static uint8_t buffer[128];
 static uint8_t buf_len;
 
 // Address currently writing
-static int current_addr;
+static unsigned current_addr;
 
 // High byte of current address
-static int high_addr;
+static uint8_t high_addr;
 
 // Input file
 static FILE *hex_file;
@@ -156,15 +156,14 @@ static uint8_t output_data()
 {
     register uint8_t ln;
     register uint8_t *ptr;
-    static int addr;
-    addr = (buffer[1]<<8) + buffer[2];
+    static unsigned addr;
+    addr = (buffer[1]<<8) | buffer[2];
     if( addr & 1 )
     {
         puts("new address can not be odd");
         return 1;
     }
-    addr >>= 1;
-    addr |= high_addr;
+    addr = (addr >> 1) | (high_addr << 8);
 
     if( addr >= pic.last_addr )
     {
@@ -240,7 +239,7 @@ static uint8_t linear_addr()
         puts("addresses > $1FFFF not supported");
         return 1;
     }
-    high_addr = buffer[5] ? 0x8000 : 0x0000;
+    high_addr = buffer[5] ? 0x80 : 0x00;
     return 0;
 }
 
