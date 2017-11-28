@@ -45,7 +45,6 @@ sbuf    equ     $f3     ; buffer to write in showMsg
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
         org     $2800
 
         ; --------------------------------------------------------------
@@ -53,9 +52,7 @@ sbuf    equ     $f3     ; buffer to write in showMsg
         ;  key press.
         ;
 restart:
-        lda #<pressStartMsg
-        ldx #>pressStartMsg
-        jsr showMsg
+        showMsg "$9B 'Press START to program PIC,' $9B 'SELECT returns to DOS' $9B $9B"
 
 readConsol:
         lda CONSOL
@@ -70,32 +67,20 @@ readConsol:
 startPressed:
         jmp programPIC
 
-pressStartMsg:  .by     $9B, "Press START to program PIC,", $9B
-                .by     "SELECT returns to DOS", $9B, $9B, 0
 
 
         ; --------------------------------------------------------------
         ;  Error reading device ID
         ;
-devIdErrorM1:   .by     "ERROR invalid device ID.", $9b, "Detected $", 0
-devIdErrorM2:   .by     ", expected $", 0
 
 deviceIdError:
         ; Ends programming and shows error
         jsr stopProgramming
 
-        lda #<devIdErrorM1
-        ldx #>devIdErrorM1
-        jsr showMsg
-        ldx ioword+1
-        lda ioword
-        jsr showHex16
-        lda #<devIdErrorM2
-        ldx #>devIdErrorM2
-        jsr showMsg
-        ldx PS_deviceID+1
-        lda PS_deviceID
-        jsr showHex16
+        showMsg   "'ERROR invalid device ID.' $9b 'Detected $'"
+        showHex16 ioword
+        showMsg   "', expected $'"
+        showHex16 PS_deviceID
 
         jmp exitWithAddr
 
@@ -249,55 +234,57 @@ loadConfigCmd:
         ; Terminates OK the programming
 okProgramming:
         jsr stopProgramming
-        lda #<okMessage
-        ldx #>okMessage
-        jsr showMsg
+        showMsg   "'PIC programmed successfully.' $9B"
         jmp restart
 
-okMessage:      .by     "PIC programmed successfully.", $9B, 0
 
 exitWithAddr:
-        lda #<addrMessage
-        ldx #>addrMessage
-        jsr showMsg
-        ldx picadr+1
-        lda picadr
-        jsr showHex16
-        lda #$9B
-        jsr showChar
+        showMsg   "$9B 'Writing address $'"
+        showHex16 picadr
+        showChar  #$9B
         jmp restart
 
-addrMessage:    .by     $9B, "Writing address $", 0
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;  Shows a string to screen
-showMsg:
-        ; Get length
-        ldy #$ff
+.macro showMsg
+        ift :0 > 1
+         .error "error, only one argument supported"
+        eif
+        jsr showMsgJsr
+        .by :1
+        .by 0
+.endm
+.proc showMsgJsr
+        ; Get message address from stack
+        pla
         sta sbuf
-        stx sbuf+1
-getMsgLen:
-        iny
-        lda (sbuf),y
-        bne getMsgLen
+        pla
+        sta sbuf+1
+        bne msgLoopStart ; Assume that the message is never in page 0
 
+msgLoop:
+        showChar @
+
+msgLoopStart:
+        ; Increment pointer
+        inw sbuf
+        ; Read character, end if 0
+        ldy #0
+        lda (sbuf), y
+        bne msgLoop
+
+        lda sbuf+1
+        pha
         lda sbuf
-        sta ICBUFA
-        stx ICBUFA+1
-
-        ldx #$00
-        tya
-        sta ICBUFL
-        stx ICBUFL+1
-
-        lda #$0b
-        sta ICCMD
-        jmp CIOV
+        pha
+        rts
+.endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;  Shows a 16 bit hex number in A:X
-showHex16:
+showHex16 .proc ( .word xa ) .reg
         pha
         txa
         jsr showHex
@@ -306,28 +293,27 @@ showHex16:
         ; fall through
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;  Shows an 8 bit hex number
+;;;  Shows an 8 bit hex number in A
 showHex:
         pha
         lsr
         lsr
         lsr
         lsr
-        tax
-        lda hexTab,x
-        jsr showChar
+        tay
+        showChar "hexTab,y"
 
         pla
         and #15
         tax
         lda hexTab,x
 
+.endp
         ; fall through
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;  Shows a character to screen
-showChar:
-        tax
+;;;  Shows a character to screen, in X
+showChar .proc ( .byte x ) .reg
         lda ICPUTB+1
         pha
         lda ICPUTB
@@ -335,6 +321,7 @@ showChar:
         txa
         ldx #$00
         rts
+.endp
 
 hexTab:
         .by "0123456789ABCDEF"
@@ -515,23 +502,13 @@ verifyError:
         jsr stopProgramming
 
         ; Show byte to write and byte written
-        lda #<verifyErrorM1
-        ldx #>verifyErrorM1
-        jsr showMsg
-        ldx tmp+1
-        lda tmp
-        jsr showHex16
-        lda #<verifyErrorM2
-        ldx #>verifyErrorM2
-        jsr showMsg
-        ldx ioword+1
-        lda ioword
-        jsr showHex16
+        showMsg "'ERROR at memory verify' $9B 'Wrote $'"
+        showHex16 tmp
+        showMsg "' and read $'"
+        showHex16 ioword
 
         jmp exitWithAddr
 
-verifyErrorM1:  .by     "ERROR at memory verify", $9B, "Wrote $", 0
-verifyErrorM2:  .by     " and read $", 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;  Increments memory location
